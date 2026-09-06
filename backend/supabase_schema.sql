@@ -1,8 +1,23 @@
 create extension if not exists pgcrypto;
 
+-- Authentication migration. Existing legacy ownership columns are renamed in place
+-- so the data model uses the generic Supabase Auth user_id. Existing legacy IDs may not correspond
+-- to Supabase Auth users; new sessions use the Supabase Auth UUID.
+do $$
+begin
+  if exists (select 1 from information_schema.columns where table_schema='public' and table_name='students' and column_name='clerk_user_id')
+     and not exists (select 1 from information_schema.columns where table_schema='public' and table_name='students' and column_name='user_id') then
+    alter table public.students rename column clerk_user_id to user_id;
+  end if;
+  if exists (select 1 from information_schema.columns where table_schema='public' and table_name='assessment_attempts' and column_name='clerk_user_id')
+     and not exists (select 1 from information_schema.columns where table_schema='public' and table_name='assessment_attempts' and column_name='user_id') then
+    alter table public.assessment_attempts rename column clerk_user_id to user_id;
+  end if;
+end $$;
+
 create table if not exists public.students (
   id uuid primary key default gen_random_uuid(),
-  clerk_user_id text not null unique,
+  user_id text not null unique,
   profile jsonb not null default '{}'::jsonb,
   recommendations jsonb not null default '[]'::jsonb,
   roadmap jsonb not null default '[]'::jsonb,
@@ -10,7 +25,7 @@ create table if not exists public.students (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-create index if not exists students_clerk_user_id_idx on public.students (clerk_user_id);
+create index if not exists students_user_id_idx on public.students (user_id);
 create or replace function public.touch_students_updated_at()
 returns trigger
 language plpgsql
@@ -42,7 +57,7 @@ create index if not exists assessment_questions_interest_idx on public.assessmen
 
 create table if not exists public.assessment_attempts (
   id uuid primary key default gen_random_uuid(),
-  clerk_user_id text not null unique,
+  user_id text not null unique,
   question_ids jsonb not null default '[]'::jsonb,
   answers jsonb not null default '[]'::jsonb,
   status text not null,
@@ -56,7 +71,7 @@ create table if not exists public.assessment_attempts (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists assessment_attempts_clerk_user_id_idx on public.assessment_attempts (clerk_user_id);
+create index if not exists assessment_attempts_user_id_idx on public.assessment_attempts (user_id);
 
 create or replace function public.touch_assessment_attempt_updated_at()
 returns trigger language plpgsql as $$

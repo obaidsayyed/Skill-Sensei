@@ -36,17 +36,17 @@ def _supabase_endpoint(path: str = "students") -> str:
 def _student_from_row(row: dict) -> dict:
     profile = deepcopy(row.get("profile") or {})
     profile["id"] = row["id"]
-    profile["clerk_user_id"] = row.get("clerk_user_id")
+    profile["user_id"] = row.get("user_id")
     return profile
 
 
-def _row_from_student(student: dict, clerk_user_id: str) -> dict:
+def _row_from_student(student: dict, user_id: str) -> dict:
     profile = deepcopy(student)
     profile.pop("id", None)
-    profile.pop("clerk_user_id", None)
+    profile.pop("user_id", None)
     return {
         "id": student.get("id") or str(uuid4()),
-        "clerk_user_id": clerk_user_id,
+        "user_id": user_id,
         "profile": profile,
         "recommendations": deepcopy(RECOMMENDATIONS.get(student.get("id", ""), [])),
         "roadmap": deepcopy(ROADMAPS.get(student.get("id", ""), [])),
@@ -54,10 +54,10 @@ def _row_from_student(student: dict, clerk_user_id: str) -> dict:
     }
 
 
-def _load_row_by_user(clerk_user_id: str) -> dict | None:
+def _load_row_by_user(user_id: str) -> dict | None:
     if not _supabase_enabled():
         return None
-    url = f"{_supabase_endpoint()}?select=*&clerk_user_id=eq.{quote(clerk_user_id, safe='')}"
+    url = f"{_supabase_endpoint()}?select=*&user_id=eq.{quote(user_id, safe='')}"
     with httpx.Client(timeout=10) as client:
         response = client.get(url, headers=_supabase_headers())
     response.raise_for_status()
@@ -69,7 +69,7 @@ def _save_row(row: dict) -> dict:
     if not _supabase_enabled():
         return row
 
-    url = f"{_supabase_endpoint()}?on_conflict=clerk_user_id"
+    url = f"{_supabase_endpoint()}?on_conflict=user_id"
     headers = {
         **_supabase_headers(),
         "Prefer": "resolution=merge-duplicates,return=representation",
@@ -93,26 +93,26 @@ def _save_row(row: dict) -> dict:
     rows = response.json()
     return rows[0] if rows else row
 
-def _persist_derived(student_id: str, clerk_user_id: str) -> None:
+def _persist_derived(student_id: str, user_id: str) -> None:
     if not _supabase_enabled():
         return
     student = STUDENTS[student_id]
-    row = _row_from_student(student, clerk_user_id)
+    row = _row_from_student(student, user_id)
     _save_row(row)
 
 
-def create_or_update_student(payload: dict, clerk_user_id: str) -> dict:
-    existing = get_student_by_user(clerk_user_id)
+def create_or_update_student(payload: dict, user_id: str) -> dict:
+    existing = get_student_by_user(user_id)
     student_id = existing.get("id") if existing else payload.get("id") or str(uuid4())
     record = deepcopy(payload)
     record["id"] = student_id
-    record["clerk_user_id"] = clerk_user_id
+    record["user_id"] = user_id
     STUDENTS[student_id] = record
     # Profile edits invalidate derived outputs so recommendations and roadmap are regenerated.
     RECOMMENDATIONS.pop(student_id, None)
     ROADMAPS.pop(student_id, None)
     PROGRESS.pop(student_id, None)
-    _persist_derived(student_id, clerk_user_id)
+    _persist_derived(student_id, user_id)
     return deepcopy(record)
 
 
@@ -122,9 +122,9 @@ def get_student(student_id: str):
     return None
 
 
-def get_student_by_user(clerk_user_id: str):
+def get_student_by_user(user_id: str):
     # Prefer persistent Supabase state when configured.
-    row = _load_row_by_user(clerk_user_id)
+    row = _load_row_by_user(user_id)
     if row:
         student = _student_from_row(row)
         STUDENTS[student["id"]] = deepcopy(student)
@@ -137,24 +137,24 @@ def get_student_by_user(clerk_user_id: str):
         return deepcopy(student)
 
     for student in STUDENTS.values():
-        if student.get("clerk_user_id") == clerk_user_id:
+        if student.get("user_id") == user_id:
             return deepcopy(student)
     return None
 
 
-def get_student_for_user(student_id: str, clerk_user_id: str):
+def get_student_for_user(student_id: str, user_id: str):
     student = get_student(student_id)
-    if student and student.get("clerk_user_id") == clerk_user_id:
+    if student and student.get("user_id") == user_id:
         return student
     return None
 
 
-def save_derived(student_id: str, clerk_user_id: str, recommendations: list[dict], roadmap: list[dict], progress: dict | None = None):
+def save_derived(student_id: str, user_id: str, recommendations: list[dict], roadmap: list[dict], progress: dict | None = None):
     RECOMMENDATIONS[student_id] = deepcopy(recommendations)
     ROADMAPS[student_id] = deepcopy(roadmap)
     if progress is not None:
         PROGRESS[student_id] = deepcopy(progress)
-    _persist_derived(student_id, clerk_user_id)
+    _persist_derived(student_id, user_id)
 
 
 
@@ -179,10 +179,10 @@ def list_assessment_questions() -> list[dict]:
 
 
 def save_assessment_attempt(attempt: dict) -> dict:
-    ASSESSMENT_ATTEMPTS[attempt["clerk_user_id"]] = deepcopy(attempt)
+    ASSESSMENT_ATTEMPTS[attempt["user_id"]] = deepcopy(attempt)
     if not _supabase_enabled():
         return deepcopy(attempt)
-    url = f"{_assessment_attempts_endpoint()}?on_conflict=clerk_user_id"
+    url = f"{_assessment_attempts_endpoint()}?on_conflict=user_id"
     headers = {**_supabase_headers(), "Prefer": "resolution=merge-duplicates,return=representation"}
     with httpx.Client(timeout=10) as client:
         response = client.post(url, headers=headers, json=attempt)
@@ -191,16 +191,16 @@ def save_assessment_attempt(attempt: dict) -> dict:
     return rows[0] if rows else deepcopy(attempt)
 
 
-def get_assessment_attempt(clerk_user_id: str) -> dict | None:
+def get_assessment_attempt(user_id: str) -> dict | None:
     if _supabase_enabled():
-        url = f"{_assessment_attempts_endpoint()}?select=*&clerk_user_id=eq.{quote(clerk_user_id, safe='')}"
+        url = f"{_assessment_attempts_endpoint()}?select=*&user_id=eq.{quote(user_id, safe='')}"
         with httpx.Client(timeout=10) as client:
             response = client.get(url, headers=_supabase_headers())
         response.raise_for_status()
         rows = response.json()
         if rows:
             return rows[0]
-    return deepcopy(ASSESSMENT_ATTEMPTS.get(clerk_user_id))
+    return deepcopy(ASSESSMENT_ATTEMPTS.get(user_id))
 
 
 def get_questions_by_ids(question_ids: list[str]) -> list[dict]:

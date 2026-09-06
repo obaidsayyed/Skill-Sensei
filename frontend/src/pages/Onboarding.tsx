@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, Sparkles } from 'lucide-react'
 import { api } from '../services/api'
-import { useUser } from '@clerk/react'
+import { supabase } from '../lib/supabase'
 import type { StudentProfile } from '../types'
 import type { AssessmentQuestion, AssessmentResult } from '../types/assessment'
 
@@ -11,7 +11,6 @@ const workStyles = ['Building things', 'Analyzing information', 'Working with pe
 const subjects = ['Mathematics', 'Science', 'Computer Science', 'English', 'Social Science', 'Economics', 'Accountancy', 'Languages']
 
 export default function Onboarding({ onCreated }: { onCreated: (profile: StudentProfile) => void }) {
-  const { user } = useUser()
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -24,9 +23,15 @@ export default function Onboarding({ onCreated }: { onCreated: (profile: Student
   const [form, setForm] = useState<StudentProfile>({ name: '', class_level: 10, board: 'Maharashtra State Board', city: '', subjects: [], interests: [], strengths: [], work_styles: [], goals: 'I am exploring my options' })
 
   useEffect(() => {
-    const preferredName = user?.fullName || user?.firstName || ''
-    if (preferredName && !form.name) setForm(f => ({ ...f, name: preferredName }))
-  }, [user?.fullName, user?.firstName])
+    let active = true
+    supabase.auth.getUser().then(({ data }) => {
+      if (!active) return
+      const metadata = data.user?.user_metadata || {}
+      const preferredName = metadata.full_name || metadata.name || data.user?.email?.split('@')[0] || ''
+      if (preferredName && !form.name) setForm(f => ({ ...f, name: preferredName }))
+    })
+    return () => { active = false }
+  }, [])
 
   const toggle = (key: 'subjects'|'interests'|'strengths'|'work_styles', value: string) => setForm(f => ({ ...f, [key]: f[key].includes(value) ? f[key].filter(x => x !== value) : [...f[key], value] }))
 

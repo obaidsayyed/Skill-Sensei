@@ -1,7 +1,6 @@
 from typing import Annotated
 
-from clerk_backend_api import AuthenticateRequestOptions, authenticate_request
-from clerk_backend_api.security.types import RequestState
+import httpx
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -13,32 +12,48 @@ http_bearer = HTTPBearer(auto_error=False)
 def require_user(
     request: Request,
     settings: Annotated[Settings, Depends(get_settings)],
-    _creds: Annotated[HTTPAuthorizationCredentials | None, Depends(http_bearer)] = None,
+    creds: Annotated[HTTPAuthorizationCredentials | None, Depends(http_bearer)] = None,
 ) -> str:
-    if not settings.clerk_secret_key:
+    """Verify a Supabase Auth access token and return the authenticated user UUID."""
+    if not settings.supabase_url or not settings.supabase_service_role_key:
         raise HTTPException(
             status_code=503,
-            detail="Clerk is not configured. Set CLERK_SECRET_KEY in backend/.env.",
+            detail="Supabase Auth is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in backend/.env.",
         )
 
-    state: RequestState = authenticate_request(
-        request,
-        AuthenticateRequestOptions(
-            secret_key=settings.clerk_secret_key,
-            authorized_parties=settings.authorized_parties,
-            accepts_token=["session_token"],
-        ),
-    )
-
-    if not state.is_signed_in:
-        reason = state.reason.name if state.reason else "unauthorized"
+    if not creds or creds.scheme.lower() != "bearer" or not creds.credentials:
         raise HTTPException(
             status_code=401,
-            detail=f"Clerk authentication failed: {reason}",
+            detail="Authentication required. Sign in to SkillSensei.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    user_id = state.payload.get("sub") if state.payload else None
+    url = f"{settings.supabase_url.rstrip('/')}/auth/v1/user"
+    headers = {
+        "apikey": settings.supabase_service_role_key,
+        "Authorization": f"Bearer {creds.credentials}",
+    }
+
+    try:
+        with httpx.Client(timeout=15.0) as client:
+            response = client.get(url, headers=headers)
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=503, detail="Supabase Auth could not be reached.") from exc
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=401,
+            detail="Supabase session is invalid or expired. Please sign in again.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    try:
+        user = response.json()
+    except ValueError as exc:
+        raise HTTPException(status_code=401, detail="Supabase returned an invalid user response.") from exc
+
+    user_id = user.get("id")
     if not user_id:
-        raise HTTPException(status_code=401, detail="Authenticated Clerk user ID was not present in the session token.")
-    return user_id
+        raise HTTPException(status_code=401, detail="Authenticated Supabase user ID was not present.")
+
+    return str(user_id)

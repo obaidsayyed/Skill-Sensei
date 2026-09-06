@@ -16,30 +16,22 @@ import type {
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
 
-type TokenGetter = (
-  options?: { template?: string; skipCache?: boolean }
-) => Promise<string | null>
-
+type TokenGetter = (options?: { forceRefresh?: boolean }) => Promise<string | null>
 let tokenGetter: TokenGetter | null = null
 
 export function configureAuth(getToken: TokenGetter) {
   tokenGetter = getToken
 }
 
-async function performRequest<T>(
+async function performRequest(
   path: string,
   options: RequestInit,
   token: string | null
 ): Promise<Response> {
   const headers = new Headers(options.headers)
-
   headers.set('Content-Type', 'application/json')
-
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`)
-  } else {
-    headers.delete('Authorization')
-  }
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  else headers.delete('Authorization')
 
   return fetch(`${API_BASE}${path}`, {
     ...options,
@@ -47,44 +39,28 @@ async function performRequest<T>(
   })
 }
 
-async function request<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
-  if (!tokenGetter) {
-    throw new Error('Authentication is not initialized.')
-  }
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  if (!tokenGetter) throw new Error('Authentication is not initialized.')
 
-  // Normal Clerk token retrieval. Clerk manages token freshness.
   let token = await tokenGetter()
+  let response = await performRequest(path, options, token)
 
-  let response = await performRequest<T>(path, options, token)
-
-  // If Clerk rejected the token, force one fresh token and retry once.
   if (response.status === 401) {
-    token = await tokenGetter({ skipCache: true })
-
-    response = await performRequest<T>(path, options, token)
+    token = await tokenGetter({ forceRefresh: true })
+    response = await performRequest(path, options, token)
   }
 
   if (!response.ok) {
     const body = await response.text()
-
     let message = body || `Request failed: ${response.status}`
-
     try {
       const parsed = JSON.parse(body)
-
       if (parsed?.detail) {
-        message =
-          typeof parsed.detail === 'string'
-            ? parsed.detail
-            : JSON.stringify(parsed.detail)
+        message = typeof parsed.detail === 'string' ? parsed.detail : JSON.stringify(parsed.detail)
       }
     } catch {
       // Keep the raw response text.
     }
-
     throw new Error(message)
   }
 

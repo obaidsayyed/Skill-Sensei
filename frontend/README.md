@@ -10,23 +10,14 @@ copy .env.example .env
 npm run dev
 ```
 
-The frontend expects the backend at:
+Set these frontend environment variables:
 
-`VITE_API_BASE_URL=http://localhost:8000/api`
+```env
+VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_SUPABASE_PUBLISHABLE_KEY
+VITE_API_BASE_URL=http://localhost:8000/api
+```
 
-## Fixed in this build
+Authentication is handled by Supabase Auth. The frontend listens for Supabase auth state changes, persists the session, refreshes access tokens when needed, and sends the current access token to the FastAPI backend as a bearer token.
 
-- Clerk now owns authentication, session state, and logout.
-- Internal navigation uses React Router instead of full page reloads.
-- Career detail back navigation stays inside the app.
-- Dashboard, careers, roadmap, resources, progress, profile, and college actions now surface API errors instead of silently failing.
-- Profile save refreshes derived recommendations through the backend.
-- Student API requests automatically attach the Clerk session token.
-
-## Clerk setup
-
-Create `frontend/.env` from `.env.example` and set `VITE_CLERK_PUBLISHABLE_KEY` from your Clerk Dashboard. Clerk's current React SDK uses `@clerk/react`, `ClerkProvider`, `Show`, `SignInButton`, `SignUpButton`, `UserButton`, and `useAuth()` for session tokens and sign-out.
-
-The frontend sends the Clerk session token as `Authorization: Bearer <token>` to the FastAPI backend.
-
-See `../SETUP_AFTER_CLERK.md` in the project bundle for the exact Clerk + FastAPI setup sequence.
+Google sign-in is supported when the Google provider is enabled in Supabase Authentication -> Providers and the deployed URL is configured as an allowed redirect URL.

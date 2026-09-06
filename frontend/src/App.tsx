@@ -1,8 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth, UserButton, SignInButton } from '@clerk/react'
 import { LayoutDashboard, UserRound, Compass, Map, BookOpen, TrendingUp, Building2, LogOut, Sparkles, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { api, configureAuth } from './services/api'
+import { supabase } from './lib/supabase'
 import type { StudentProfile } from './types'
 import Landing from './pages/Landing'
 import Onboarding from './pages/Onboarding'
@@ -25,7 +25,7 @@ const nav = [
   { to: '/colleges', label: 'College Explorer', icon: Building2 },
 ]
 
-function AppShell({ children, student, onLogout }: { children: ReactNode; student: StudentProfile; onLogout: () => Promise<void> }) {
+function AppShell({ children, student, onLogout, email }: { children: ReactNode; student: StudentProfile; onLogout: () => Promise<void>; email: string }) {
   const [collapsed, setCollapsed] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
@@ -50,7 +50,7 @@ function AppShell({ children, student, onLogout }: { children: ReactNode; studen
         <div className="sidebar-bottom">
           <div className="student-mini">
             <div className="avatar">{student.name.charAt(0).toUpperCase()}</div>
-            {!collapsed && <div><strong>{student.name}</strong><span>Class {student.class_level}</span></div>}
+            {!collapsed && <div><strong>{student.name}</strong><span title={email}>Class {student.class_level}</span></div>}
           </div>
           <button className="nav-item ghost" onClick={onLogout}><LogOut size={18} />{!collapsed && <span>Log out</span>}</button>
         </div>
@@ -58,7 +58,7 @@ function AppShell({ children, student, onLogout }: { children: ReactNode; studen
       <main className="main-area">
         <header className="topbar">
           <div className="topbar-title">{nav.find(n => location.pathname.startsWith(n.to))?.label || 'SkillSensei'}</div>
-          <div className="topbar-right"><span className="board-pill">{student.board}</span><span className="location-pill">{student.city || 'India'}</span><UserButton /></div>
+          <div className="topbar-right"><span className="board-pill">{student.board}</span><span className="location-pill">{student.city || 'India'}</span><div className="avatar" title={email}>{student.name.charAt(0).toUpperCase()}</div></div>
         </header>
         <div className="page-content">{children}</div>
       </main>
@@ -66,24 +66,50 @@ function AppShell({ children, student, onLogout }: { children: ReactNode; studen
   )
 }
 
-function SignedOutGate() {
-  return <div className="loading-screen"><Sparkles size={26}/><div>You need to sign in to continue.</div><SignInButton mode="modal"><button className="primary-btn">Sign in</button></SignInButton></div>
-}
-
 export default function App() {
-  const { isLoaded, isSignedIn, getToken, userId, signOut } = useAuth()
+  const [sessionReady, setSessionReady] = useState(false)
+  const [signedIn, setSignedIn] = useState(false)
   const [student, setStudent] = useState<StudentProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [email, setEmail] = useState('')
   const location = useLocation()
   const navigate = useNavigate()
 
   useEffect(() => {
-    configureAuth(getToken)
-  }, [getToken])
+    configureAuth(async ({ forceRefresh = false } = {}) => {
+      const result = forceRefresh
+        ? await supabase.auth.refreshSession()
+        : await supabase.auth.getSession()
+      return result.data.session?.access_token ?? null
+    })
+
+    let active = true
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return
+      setSignedIn(Boolean(data.session))
+      setEmail(data.session?.user?.email ?? '')
+      setSessionReady(true)
+    })
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return
+      setSignedIn(Boolean(session))
+      setEmail(session?.user?.email ?? '')
+      if (!session) {
+        setStudent(null)
+        setLoading(false)
+      }
+    })
+
+    return () => {
+      active = false
+      listener.subscription.unsubscribe()
+    }
+  }, [])
 
   useEffect(() => {
-    if (!isLoaded) return
-    if (!isSignedIn) {
+    if (!sessionReady) return
+    if (!signedIn) {
       setStudent(null)
       setLoading(false)
       return
@@ -102,20 +128,22 @@ export default function App() {
     }).finally(() => { if (active) setLoading(false) })
 
     return () => { active = false }
-  }, [isLoaded, isSignedIn, userId, navigate])
+  }, [sessionReady, signedIn, navigate])
 
   const handleLogout = async () => {
-    await signOut({ redirectUrl: '/' })
+    await supabase.auth.signOut()
     setStudent(null)
+    setSignedIn(false)
+    navigate('/', { replace: true })
   }
 
-  if (!isLoaded || loading) return <div className="loading-screen"><div className="loading-orb"><Sparkles /></div><div>Loading your SkillSensei workspace…</div></div>
+  if (!sessionReady || loading) return <div className="loading-screen"><div className="loading-orb"><Sparkles /></div><div>Loading your SkillSensei workspace…</div></div>
 
   return (
     <Routes>
-      <Route path="/" element={isSignedIn ? <Navigate to={student ? '/dashboard' : '/onboarding'} replace /> : <Landing />} />
-      <Route path="/onboarding" element={!isSignedIn ? <SignedOutGate /> : student ? <Navigate to="/dashboard" replace /> : <Onboarding onCreated={(s) => { setStudent(s); navigate('/dashboard', { replace: true }) }} />} />
-      {student ? <Route path="*" element={<AppShell student={student} onLogout={handleLogout}>
+      <Route path="/" element={signedIn ? <Navigate to={student ? '/dashboard' : '/onboarding'} replace /> : <Landing />} />
+      <Route path="/onboarding" element={!signedIn ? <Landing /> : student ? <Navigate to="/dashboard" replace /> : <Onboarding onCreated={(s) => { setStudent(s); navigate('/dashboard', { replace: true }) }} />} />
+      {student ? <Route path="*" element={<AppShell student={student} email={email} onLogout={handleLogout}>
         <Routes>
           <Route path="/dashboard" element={<Dashboard student={student} />} />
           <Route path="/profile" element={<Profile student={student} onSaved={setStudent} />} />
@@ -127,8 +155,7 @@ export default function App() {
           <Route path="/colleges" element={<CollegeExplorer />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
-      </AppShell>} /> : <Route path="*" element={isSignedIn ? <Navigate to="/onboarding" replace /> : <Landing />} />}
+      </AppShell>} /> : <Route path="*" element={signedIn ? <Navigate to="/onboarding" replace /> : <Landing />} />}
     </Routes>
   )
 }
-
