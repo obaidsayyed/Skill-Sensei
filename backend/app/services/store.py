@@ -208,7 +208,26 @@ def get_questions_by_ids(question_ids: list[str]) -> list[dict]:
     return [deepcopy(indexed[qid]) for qid in question_ids if qid in indexed]
 
 
-def list_careers(): return deepcopy(CAREERS)
-def get_career(career_id: str): return deepcopy(next((c for c in CAREERS if c["id"] == career_id), None))
+def list_careers():
+    if _supabase_enabled():
+        url = f"{_supabase_endpoint('career_paths')}?select=*"
+        with httpx.Client(timeout=10) as client:
+            response = client.get(url, headers=_supabase_headers())
+        if response.status_code == 200:
+            rows = response.json()
+            if rows:
+                return rows
+    return deepcopy(CAREERS)
+
+def get_career(career_id: str):
+    if _supabase_enabled():
+        url = f"{_supabase_endpoint('career_paths')}?select=*&id=eq.{quote(career_id, safe='')}"
+        with httpx.Client(timeout=10) as client:
+            response = client.get(url, headers=_supabase_headers())
+        if response.status_code == 200:
+            rows = response.json()
+            if rows:
+                return rows[0]
+    return deepcopy(next((c for c in CAREERS if c["id"] == career_id), None))
 def list_resources(): return deepcopy(RESOURCES)
 def list_colleges(): return deepcopy(COLLEGES)

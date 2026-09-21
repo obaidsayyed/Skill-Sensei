@@ -231,3 +231,274 @@ insert into public.assessment_questions (id, interest, dimension, question, opti
 insert into public.assessment_questions (id, interest, dimension, question, options, active) values ('ff33e355-68f3-50b7-8631-d99a99116625'::uuid, 'Entrepreneurship', 'analysis', 'A new idea sounds exciting but has little evidence. How do you respond?', '[{"id": "o1", "text": "Identify what needs testing", "scores": {"science": 6.0, "commerce": 0.8, "arts": 0.4}}, {"id": "o2", "text": "Estimate the downside before investing", "scores": {"science": 0.8, "commerce": 6.0, "arts": 0.6}}, {"id": "o3", "text": "Ask potential users about the problem", "scores": {"science": 0.4, "commerce": 0.8, "arts": 6.0}}, {"id": "o4", "text": "Run the cheapest useful experiment", "scores": {"science": 2.2, "commerce": 2.2, "arts": 2.2}}]'::jsonb, true) on conflict (id) do update set interest=excluded.interest, dimension=excluded.dimension, question=excluded.question, options=excluded.options, active=excluded.active;
 insert into public.assessment_questions (id, interest, dimension, question, options, active) values ('c5b3b18e-8094-54ca-a6f9-877b61fea37e'::uuid, 'Entrepreneurship', 'decision', 'A good entrepreneurial decision should combine...', '[{"id": "o1", "text": "Evidence and structured thinking", "scores": {"science": 0.8, "commerce": 6.0, "arts": 0.6}}, {"id": "o2", "text": "Value, constraints and risk", "scores": {"science": 0.4, "commerce": 0.8, "arts": 6.0}}, {"id": "o3", "text": "Customer understanding", "scores": {"science": 2.2, "commerce": 2.2, "arts": 2.2}}, {"id": "o4", "text": "Fast learning and willingness to adapt", "scores": {"science": 6.0, "commerce": 0.8, "arts": 0.4}}]'::jsonb, true) on conflict (id) do update set interest=excluded.interest, dimension=excluded.dimension, question=excluded.question, options=excluded.options, active=excluded.active;
 insert into public.assessment_questions (id, interest, dimension, question, options, active) values ('a9c293aa-3abc-54d9-96d9-ed2594bc7c8d'::uuid, 'Entrepreneurship', 'people_creative', 'What keeps you engaged in entrepreneurship?', '[{"id": "o1", "text": "Understanding difficult problems", "scores": {"science": 0.4, "commerce": 0.8, "arts": 6.0}}, {"id": "o2", "text": "Creating value from limited resources", "scores": {"science": 2.2, "commerce": 2.2, "arts": 2.2}}, {"id": "o3", "text": "Talking to people and solving real needs", "scores": {"science": 6.0, "commerce": 0.8, "arts": 0.4}}, {"id": "o4", "text": "Experimenting and learning quickly", "scores": {"science": 0.8, "commerce": 6.0, "arts": 0.6}}]'::jsonb, true) on conflict (id) do update set interest=excluded.interest, dimension=excluded.dimension, question=excluded.question, options=excluded.options, active=excluded.active;
+create table if not exists public.career_paths (
+  id text primary key,
+  name text not null,
+  domain text not null,
+  description text not null,
+  education jsonb not null default '[]'::jsonb,
+  skills jsonb not null default '[]'::jsonb,
+  work_style jsonb not null default '[]'::jsonb,
+  subjects jsonb not null default '[]'::jsonb,
+  paths jsonb not null default '[]'::jsonb,
+  growth text not null,
+  salary_range text not null,
+  entrance jsonb not null default '[]'::jsonb,
+  roadmap_sequence jsonb not null default '[]'::jsonb
+);
+
+insert into public.career_paths (id, name, domain, description, education, skills, work_style, subjects, paths, growth, salary_range, entrance, roadmap_sequence)
+values ('data-analyst', 'Data Analyst', 'Technology', 'Analyze data to help organizations make better decisions.', '["B.Sc. in Mathematics, Statistics, or Computer Science", "Certifications in Data Analytics"]'::jsonb, '["Mathematics", "Problem solving", "Analytical thinking", "Attention to detail"]'::jsonb, '["Analyzing information", "Working independently", "Explaining ideas"]'::jsonb, '["Mathematics", "Computer Science"]'::jsonb, '["Learn foundations -> Master tools -> Build portfolio -> Entry-level role"]'::jsonb, 'High demand across all industries.', '₹4-8 LPA (Entry Level)', '["University-specific admissions"]'::jsonb, '[{"title": "Statistics & Math", "description": "Learn descriptive and inferential statistics."}, {"title": "A/B Testing", "description": "Understand experimental design and hypothesis testing."}, {"title": "Data Cleaning", "description": "Master handling missing values and outliers."}, {"title": "Data Preprocessing", "description": "Learn normalization, encoding, and feature scaling."}, {"title": "Python & SQL", "description": "Master SQL queries and Python basics."}, {"title": "Numpy & Pandas", "description": "Data manipulation using Python libraries."}, {"title": "Matplotlib & Seaborn", "description": "Data visualization in Python."}, {"title": "Tableau", "description": "Build interactive business dashboards."}, {"title": "Power BI", "description": "Learn Microsoft''s BI tool for reporting."}]'::jsonb)
+on conflict (id) do update set
+  name = excluded.name,
+  domain = excluded.domain,
+  description = excluded.description,
+  education = excluded.education,
+  skills = excluded.skills,
+  work_style = excluded.work_style,
+  subjects = excluded.subjects,
+  paths = excluded.paths,
+  growth = excluded.growth,
+  salary_range = excluded.salary_range,
+  entrance = excluded.entrance,
+  roadmap_sequence = excluded.roadmap_sequence;
+
+insert into public.career_paths (id, name, domain, description, education, skills, work_style, subjects, paths, growth, salary_range, entrance, roadmap_sequence)
+values ('ml-engineer', 'Machine Learning Engineer', 'Technology', 'Design and build AI models that learn from data.', '["B.Tech/B.E. in CS, AI, or Data Science", "Master''s degree preferred for advanced roles"]'::jsonb, '["Mathematics", "Programming", "Problem solving", "Logical reasoning"]'::jsonb, '["Building things", "Analyzing information", "Working independently"]'::jsonb, '["Mathematics", "Computer Science", "Science"]'::jsonb, '["Math foundations -> Coding -> ML algorithms -> Projects -> Internships"]'::jsonb, 'Explosive growth due to the AI revolution.', '₹8-15 LPA (Entry Level)', '["JEE Main", "MHT-CET", "University-specific"]'::jsonb, '[{"title": "Linear Algebra & Calculus", "description": "Master the math behind ML algorithms."}, {"title": "Python Programming", "description": "Advanced Python, OOP, and data structures."}, {"title": "Data Manipulation", "description": "Pandas and Numpy mastery."}, {"title": "Scikit-Learn", "description": "Implement classical ML algorithms (regression, classification)."}, {"title": "Deep Learning Foundations", "description": "Understand neural networks and backpropagation."}, {"title": "TensorFlow / PyTorch", "description": "Build deep learning models using modern frameworks."}, {"title": "Model Deployment", "description": "Learn to serve models using Flask/FastAPI and Docker."}, {"title": "Cloud ML", "description": "Familiarize with AWS SageMaker or GCP Vertex AI."}]'::jsonb)
+on conflict (id) do update set
+  name = excluded.name,
+  domain = excluded.domain,
+  description = excluded.description,
+  education = excluded.education,
+  skills = excluded.skills,
+  work_style = excluded.work_style,
+  subjects = excluded.subjects,
+  paths = excluded.paths,
+  growth = excluded.growth,
+  salary_range = excluded.salary_range,
+  entrance = excluded.entrance,
+  roadmap_sequence = excluded.roadmap_sequence;
+
+insert into public.career_paths (id, name, domain, description, education, skills, work_style, subjects, paths, growth, salary_range, entrance, roadmap_sequence)
+values ('blockchain-developer', 'Blockchain Developer', 'Technology', 'Build decentralized applications and smart contracts.', '["B.Tech in Computer Science", "Self-taught through crypto bootcamps"]'::jsonb, '["Programming", "Logical reasoning", "Attention to detail"]'::jsonb, '["Building things", "Working independently", "Analyzing information"]'::jsonb, '["Computer Science", "Mathematics"]'::jsonb, '["Web dev basics -> Cryptography -> Smart Contracts -> dApps"]'::jsonb, 'Niche but high paying and growing in Web3.', '₹7-14 LPA (Entry Level)', '["JEE Main", "University-specific"]'::jsonb, '[{"title": "Cryptography Basics", "description": "Understand hashes, public/private keys, and digital signatures."}, {"title": "Blockchain Fundamentals", "description": "Learn how consensus mechanisms (PoW, PoS) work."}, {"title": "Solidity", "description": "Learn the primary language for Ethereum smart contracts."}, {"title": "Smart Contract Security", "description": "Understand reentrancy, overflows, and secure coding."}, {"title": "Ethers.js / Web3.js", "description": "Connect frontend applications to the blockchain."}, {"title": "Hardhat / Foundry", "description": "Master smart contract testing and deployment frameworks."}, {"title": "Build a dApp", "description": "Create a full-stack decentralized application."}]'::jsonb)
+on conflict (id) do update set
+  name = excluded.name,
+  domain = excluded.domain,
+  description = excluded.description,
+  education = excluded.education,
+  skills = excluded.skills,
+  work_style = excluded.work_style,
+  subjects = excluded.subjects,
+  paths = excluded.paths,
+  growth = excluded.growth,
+  salary_range = excluded.salary_range,
+  entrance = excluded.entrance,
+  roadmap_sequence = excluded.roadmap_sequence;
+
+insert into public.career_paths (id, name, domain, description, education, skills, work_style, subjects, paths, growth, salary_range, entrance, roadmap_sequence)
+values ('prompt-engineer', 'Prompt Engineer', 'Technology', 'Design and optimize prompts for Large Language Models (LLMs).', '["Any degree", "Strong language and analytical skills required"]'::jsonb, '["Communication", "Problem solving", "Creativity", "Logical reasoning"]'::jsonb, '["Analyzing information", "Working independently", "Explaining ideas"]'::jsonb, '["English", "Computer Science"]'::jsonb, '["Learn LLM basics -> Prompting techniques -> Automation -> AI integration roles"]'::jsonb, 'Emerging field with high demand for AI adoption.', '₹5-12 LPA (Entry Level)', '["No specific entrance"]'::jsonb, '[{"title": "LLM Fundamentals", "description": "Understand how transformers and generative AI work."}, {"title": "Basic Prompting", "description": "Learn zero-shot and few-shot prompting techniques."}, {"title": "Advanced Techniques", "description": "Master Chain-of-Thought and Tree-of-Thoughts prompting."}, {"title": "Context Management", "description": "Learn to manage context windows and memory."}, {"title": "API Integration", "description": "Use OpenAI or Anthropic APIs in Python scripts."}, {"title": "RAG Basics", "description": "Understand Retrieval-Augmented Generation concepts."}, {"title": "Evaluation", "description": "Learn how to systematically evaluate LLM outputs."}]'::jsonb)
+on conflict (id) do update set
+  name = excluded.name,
+  domain = excluded.domain,
+  description = excluded.description,
+  education = excluded.education,
+  skills = excluded.skills,
+  work_style = excluded.work_style,
+  subjects = excluded.subjects,
+  paths = excluded.paths,
+  growth = excluded.growth,
+  salary_range = excluded.salary_range,
+  entrance = excluded.entrance,
+  roadmap_sequence = excluded.roadmap_sequence;
+
+insert into public.career_paths (id, name, domain, description, education, skills, work_style, subjects, paths, growth, salary_range, entrance, roadmap_sequence)
+values ('ux-design', 'UI/UX Designer', 'Design', 'Create intuitive, visually appealing digital experiences.', '["B.Des or relevant design degree", "Strong portfolio is critical"]'::jsonb, '["Creativity", "Empathy", "Visual thinking", "Communication"]'::jsonb, '["Creating visually", "Working with people", "Explaining ideas"]'::jsonb, '["Art/Design", "English", "Social Science"]'::jsonb, '["Learn principles -> Master tools -> Build portfolio -> Internships"]'::jsonb, 'Steady growth across all digital products.', '₹4-10 LPA (Entry Level)', '["NID", "NIFT", "CEED"]'::jsonb, '[{"title": "Design Principles", "description": "Learn color theory, typography, and spacing."}, {"title": "User Research", "description": "Understand how to conduct interviews and surveys."}, {"title": "Wireframing", "description": "Create low-fidelity sketches and layouts."}, {"title": "Figma Mastery", "description": "Learn components, auto-layout, and prototyping in Figma."}, {"title": "UI Design", "description": "Create high-fidelity, pixel-perfect interfaces."}, {"title": "Usability Testing", "description": "Test your designs with real users and iterate."}, {"title": "Portfolio Building", "description": "Publish 3 comprehensive case studies."}]'::jsonb)
+on conflict (id) do update set
+  name = excluded.name,
+  domain = excluded.domain,
+  description = excluded.description,
+  education = excluded.education,
+  skills = excluded.skills,
+  work_style = excluded.work_style,
+  subjects = excluded.subjects,
+  paths = excluded.paths,
+  growth = excluded.growth,
+  salary_range = excluded.salary_range,
+  entrance = excluded.entrance,
+  roadmap_sequence = excluded.roadmap_sequence;
+
+insert into public.career_paths (id, name, domain, description, education, skills, work_style, subjects, paths, growth, salary_range, entrance, roadmap_sequence)
+values ('investment-banker', 'Investment Banker', 'Finance', 'Help organizations raise capital and manage mergers/acquisitions.', '["B.Com, BBA, or Economics", "Top-tier MBA usually required for advancement"]'::jsonb, '["Mathematics", "Analytical thinking", "Communication", "Attention to detail"]'::jsonb, '["Analyzing information", "Working with people", "Working independently"]'::jsonb, '["Accountancy", "Economics", "Mathematics"]'::jsonb, '["Strong academics -> Finance degree -> Internships -> Analyst role -> MBA"]'::jsonb, 'Highly competitive, high reward.', '₹12-25 LPA (Entry Level, top firms)', '["CUET", "CAT (for MBA)"]'::jsonb, '[{"title": "Accounting Basics", "description": "Master the three financial statements."}, {"title": "Excel Mastery", "description": "Learn advanced Excel formulas and shortcuts."}, {"title": "Financial Modeling", "description": "Build 3-statement models from scratch."}, {"title": "Valuation Methods", "description": "Learn DCF, comparable companies, and precedent transactions."}, {"title": "Corporate Finance", "description": "Understand capital structure and WACC."}, {"title": "Pitchbooks", "description": "Learn to create professional presentations in PowerPoint."}, {"title": "Interview Prep", "description": "Master technical and behavioral finance interview questions."}]'::jsonb)
+on conflict (id) do update set
+  name = excluded.name,
+  domain = excluded.domain,
+  description = excluded.description,
+  education = excluded.education,
+  skills = excluded.skills,
+  work_style = excluded.work_style,
+  subjects = excluded.subjects,
+  paths = excluded.paths,
+  growth = excluded.growth,
+  salary_range = excluded.salary_range,
+  entrance = excluded.entrance,
+  roadmap_sequence = excluded.roadmap_sequence;
+
+insert into public.career_paths (id, name, domain, description, education, skills, work_style, subjects, paths, growth, salary_range, entrance, roadmap_sequence)
+values ('digital-marketer', 'Digital Marketer', 'Business', 'Promote products and brands across digital channels.', '["BBA, B.Com, or BA", "Certifications in Google Ads, SEO"]'::jsonb, '["Communication", "Creativity", "Analytical thinking"]'::jsonb, '["Working with people", "Analyzing information", "Creating visually"]'::jsonb, '["English", "Business Studies", "Economics"]'::jsonb, '["Learn channels -> Run campaigns -> Analyze data -> Specialization"]'::jsonb, 'High demand for performance and growth marketing.', '₹3-7 LPA (Entry Level)', '["University-specific"]'::jsonb, '[{"title": "Marketing Fundamentals", "description": "Understand target audiences, funnels, and branding."}, {"title": "Content Strategy", "description": "Learn copywriting and social media content creation."}, {"title": "SEO Basics", "description": "Understand on-page, off-page, and technical SEO."}, {"title": "Google Analytics", "description": "Learn to track website traffic and user behavior."}, {"title": "Paid Advertising", "description": "Run campaigns on Google Ads and Meta Ads."}, {"title": "Email Marketing", "description": "Learn automation and list building (e.g., Mailchimp)."}, {"title": "Conversion Rate Optimization", "description": "Run A/B tests to improve campaign ROI."}]'::jsonb)
+on conflict (id) do update set
+  name = excluded.name,
+  domain = excluded.domain,
+  description = excluded.description,
+  education = excluded.education,
+  skills = excluded.skills,
+  work_style = excluded.work_style,
+  subjects = excluded.subjects,
+  paths = excluded.paths,
+  growth = excluded.growth,
+  salary_range = excluded.salary_range,
+  entrance = excluded.entrance,
+  roadmap_sequence = excluded.roadmap_sequence;
+
+insert into public.career_paths (id, name, domain, description, education, skills, work_style, subjects, paths, growth, salary_range, entrance, roadmap_sequence)
+values ('corporate-lawyer', 'Corporate Lawyer', 'Law', 'Advise businesses on legal rights, obligations, and transactions.', '["5-year integrated B.A. LL.B or B.B.A. LL.B"]'::jsonb, '["Logical reasoning", "Communication", "Attention to detail", "Research"]'::jsonb, '["Analyzing information", "Explaining ideas", "Working with people"]'::jsonb, '["English", "Political Science", "Social Science"]'::jsonb, '["CLAT prep -> Law school -> Corporate internships -> Firm placement"]'::jsonb, 'Steady growth, very high earning potential in top tier firms.', '₹10-18 LPA (Top Tier Entry)', '["CLAT", "AILET", "LSAT"]'::jsonb, '[{"title": "Legal Foundations", "description": "Master Contracts and Constitutional Law."}, {"title": "Corporate Law Basics", "description": "Understand the Companies Act and corporate structures."}, {"title": "Commercial Awareness", "description": "Stay updated on business news and M&A trends."}, {"title": "Drafting Skills", "description": "Learn to draft and review commercial contracts."}, {"title": "Due Diligence", "description": "Master the process of legal due diligence for transactions."}, {"title": "Negotiation", "description": "Develop skills to negotiate terms in commercial agreements."}, {"title": "Specialization", "description": "Choose a focus area like IP, Tax, or Competition Law."}]'::jsonb)
+on conflict (id) do update set
+  name = excluded.name,
+  domain = excluded.domain,
+  description = excluded.description,
+  education = excluded.education,
+  skills = excluded.skills,
+  work_style = excluded.work_style,
+  subjects = excluded.subjects,
+  paths = excluded.paths,
+  growth = excluded.growth,
+  salary_range = excluded.salary_range,
+  entrance = excluded.entrance,
+  roadmap_sequence = excluded.roadmap_sequence;
+
+insert into public.career_paths (id, name, domain, description, education, skills, work_style, subjects, paths, growth, salary_range, entrance, roadmap_sequence)
+values ('clinical-psychologist', 'Clinical Psychologist', 'Healthcare', 'Diagnose and treat mental, emotional, and behavioral disorders.', '["BA/BSc Psychology", "Master''s and M.Phil/Psy.D for clinical license"]'::jsonb, '["Empathy", "Communication", "Observation", "Analytical thinking"]'::jsonb, '["Working with people", "Analyzing information", "Explaining ideas"]'::jsonb, '["Psychology", "Biology", "English"]'::jsonb, '["Undergrad -> Masters -> RCI Licensing (in India) -> Practice"]'::jsonb, 'Increasing awareness is driving huge demand for mental health professionals.', '₹4-8 LPA (Entry Level)', '["CUET", "University-specific"]'::jsonb, '[{"title": "Foundational Psychology", "description": "Understand cognitive, developmental, and social psychology."}, {"title": "Research Methods", "description": "Learn qualitative and quantitative research and statistics."}, {"title": "Abnormal Psychology", "description": "Study psychological disorders and the DSM/ICD frameworks."}, {"title": "Therapeutic Approaches", "description": "Learn basics of CBT, Psychoanalysis, and Humanistic therapies."}, {"title": "Psychometric Testing", "description": "Understand how to administer and interpret psychological tests."}, {"title": "Supervised Practice", "description": "Gain clinical experience through supervised internships."}, {"title": "Licensing", "description": "Complete M.Phil or recognized program for RCI registration."}]'::jsonb)
+on conflict (id) do update set
+  name = excluded.name,
+  domain = excluded.domain,
+  description = excluded.description,
+  education = excluded.education,
+  skills = excluded.skills,
+  work_style = excluded.work_style,
+  subjects = excluded.subjects,
+  paths = excluded.paths,
+  growth = excluded.growth,
+  salary_range = excluded.salary_range,
+  entrance = excluded.entrance,
+  roadmap_sequence = excluded.roadmap_sequence;
+
+insert into public.career_paths (id, name, domain, description, education, skills, work_style, subjects, paths, growth, salary_range, entrance, roadmap_sequence)
+values ('game-designer', 'Video Game Designer', 'Technology', 'Design the rules, stories, and mechanics of video games.', '["B.Des or B.Tech (depending on focus)", "Strong portfolio of game jams"]'::jsonb, '["Creativity", "Logical reasoning", "Problem solving", "Communication"]'::jsonb, '["Building things", "Creating visually", "Working with people"]'::jsonb, '["Computer Science", "Mathematics", "Art/Design"]'::jsonb, '["Play games critically -> Learn engine -> Game jams -> Indie/Studio role"]'::jsonb, 'Competitive but growing rapidly globally and in India.', '₹4-10 LPA (Entry Level)', '["NID", "University-specific"]'::jsonb, '[{"title": "Game Analysis", "description": "Learn to deconstruct games into mechanics, dynamics, and aesthetics."}, {"title": "Game Engines", "description": "Learn the basics of Unity or Unreal Engine."}, {"title": "Prototyping", "description": "Build small, playable mechanics without polishing visuals."}, {"title": "Level Design", "description": "Understand pacing, difficulty curves, and player guidance."}, {"title": "Narrative Design", "description": "Learn basic storytelling and quest design structures."}, {"title": "Game Jams", "description": "Participate in 48-hour game jams to build your portfolio."}, {"title": "Specialization", "description": "Focus on Systems Design, Level Design, or Narrative Design."}]'::jsonb)
+on conflict (id) do update set
+  name = excluded.name,
+  domain = excluded.domain,
+  description = excluded.description,
+  education = excluded.education,
+  skills = excluded.skills,
+  work_style = excluded.work_style,
+  subjects = excluded.subjects,
+  paths = excluded.paths,
+  growth = excluded.growth,
+  salary_range = excluded.salary_range,
+  entrance = excluded.entrance,
+  roadmap_sequence = excluded.roadmap_sequence;
+
+insert into public.career_paths (id, name, domain, description, education, skills, work_style, subjects, paths, growth, salary_range, entrance, roadmap_sequence)
+values ('marine-biologist', 'Marine Biologist', 'Science', 'Study marine organisms, their behaviors, and interactions with the environment.', '["B.Sc in Zoology, Marine Biology, or Life Sciences", "Master''s degree"]'::jsonb, '["Research", "Observation", "Analytical thinking", "Attention to detail"]'::jsonb, '["Analyzing information", "Working independently", "Research"]'::jsonb, '["Biology", "Chemistry", "Science"]'::jsonb, '["Science basics -> B.Sc -> Field work/Internships -> Master''s -> Research/Conservation"]'::jsonb, 'Niche field, driven by climate research and conservation efforts.', '₹3-7 LPA (Entry Level)', '["CUET", "University-specific"]'::jsonb, '[{"title": "Biology Foundations", "description": "Master genetics, ecology, and evolutionary biology."}, {"title": "Oceanography Basics", "description": "Understand physical and chemical oceanography."}, {"title": "Marine Zoology", "description": "Study marine invertebrates and vertebrates."}, {"title": "Data Collection Methods", "description": "Learn field sampling and laboratory techniques."}, {"title": "Statistical Analysis", "description": "Learn to analyze ecological data using R or Python."}, {"title": "SCUBA Certification", "description": "Obtain necessary diving certifications for field work."}, {"title": "Field Research", "description": "Participate in a marine conservation or research project."}]'::jsonb)
+on conflict (id) do update set
+  name = excluded.name,
+  domain = excluded.domain,
+  description = excluded.description,
+  education = excluded.education,
+  skills = excluded.skills,
+  work_style = excluded.work_style,
+  subjects = excluded.subjects,
+  paths = excluded.paths,
+  growth = excluded.growth,
+  salary_range = excluded.salary_range,
+  entrance = excluded.entrance,
+  roadmap_sequence = excluded.roadmap_sequence;
+
+insert into public.career_paths (id, name, domain, description, education, skills, work_style, subjects, paths, growth, salary_range, entrance, roadmap_sequence)
+values ('content-creator', 'Content Creator / Influencer', 'Media', 'Produce engaging digital content for platforms like YouTube, Instagram, and TikTok.', '["No specific degree required", "Media or Communications can help"]'::jsonb, '["Creativity", "Communication", "Video Editing", "Adaptability"]'::jsonb, '["Creating visually", "Working independently", "Explaining ideas"]'::jsonb, '["English", "Art/Design", "Media Studies"]'::jsonb, '["Identify niche -> Create content consistently -> Understand algorithms -> Monetize"]'::jsonb, 'Massive potential, but highly volatile and competitive.', 'Highly variable (Ad revenue, sponsorships)', '["None"]'::jsonb, '[{"title": "Niche Discovery", "description": "Identify your target audience and content category."}, {"title": "Basic Videography", "description": "Learn lighting, framing, and audio basics."}, {"title": "Video Editing", "description": "Master Premiere Pro, Final Cut, or mobile apps like CapCut."}, {"title": "Storytelling", "description": "Learn how to hook viewers and retain attention."}, {"title": "Platform Algorithms", "description": "Understand how YouTube, Instagram, or TikTok distribute content."}, {"title": "Analytics", "description": "Learn to read audience retention and CTR metrics."}, {"title": "Monetization Strategy", "description": "Understand brand deals, merchandise, and ad revenue."}]'::jsonb)
+on conflict (id) do update set
+  name = excluded.name,
+  domain = excluded.domain,
+  description = excluded.description,
+  education = excluded.education,
+  skills = excluded.skills,
+  work_style = excluded.work_style,
+  subjects = excluded.subjects,
+  paths = excluded.paths,
+  growth = excluded.growth,
+  salary_range = excluded.salary_range,
+  entrance = excluded.entrance,
+  roadmap_sequence = excluded.roadmap_sequence;
+
+insert into public.career_paths (id, name, domain, description, education, skills, work_style, subjects, paths, growth, salary_range, entrance, roadmap_sequence)
+values ('ethical-hacker', 'Ethical Hacker', 'Technology', 'Secure computer systems by finding and fixing vulnerabilities.', '["B.Tech/B.Sc in CS or Cyber Security", "Certifications like CEH, OSCP"]'::jsonb, '["Logical reasoning", "Problem solving", "Programming", "Attention to detail"]'::jsonb, '["Analyzing information", "Working independently", "Building things"]'::jsonb, '["Computer Science", "Mathematics"]'::jsonb, '["IT basics -> Networking -> Security basics -> Certifications -> Penetration testing"]'::jsonb, 'Extremely high demand due to rising cyber threats.', '₹6-12 LPA (Entry Level)', '["JEE Main", "University-specific"]'::jsonb, '[{"title": "Networking Basics", "description": "Master TCP/IP, DNS, HTTP, and OSI model."}, {"title": "Linux Mastery", "description": "Become proficient with the Linux command line (Kali Linux)."}, {"title": "Programming for Security", "description": "Learn Python and Bash for scripting and automation."}, {"title": "Web Application Security", "description": "Understand OWASP Top 10 vulnerabilities (SQLi, XSS)."}, {"title": "Network Scanning", "description": "Learn to use tools like Nmap and Wireshark."}, {"title": "Exploitation Basics", "description": "Understand Metasploit and basic privilege escalation."}, {"title": "CTF Challenges", "description": "Practice skills on platforms like HackTheBox or TryHackMe."}]'::jsonb)
+on conflict (id) do update set
+  name = excluded.name,
+  domain = excluded.domain,
+  description = excluded.description,
+  education = excluded.education,
+  skills = excluded.skills,
+  work_style = excluded.work_style,
+  subjects = excluded.subjects,
+  paths = excluded.paths,
+  growth = excluded.growth,
+  salary_range = excluded.salary_range,
+  entrance = excluded.entrance,
+  roadmap_sequence = excluded.roadmap_sequence;
+
+insert into public.career_paths (id, name, domain, description, education, skills, work_style, subjects, paths, growth, salary_range, entrance, roadmap_sequence)
+values ('product-management', 'Product Management', 'Technology', 'Decide what products should solve, for whom, and how teams should build them.', '["Any degree (Engineering/Business common)", "MBA often helpful later"]'::jsonb, '["Communication", "Problem solving", "Prioritization", "User empathy"]'::jsonb, '["Working with people", "Leading teams", "Explaining ideas"]'::jsonb, '["English", "Mathematics", "Computer Science"]'::jsonb, '["Domain expertise -> Problem solving -> APM programs / internal transitions"]'::jsonb, 'Strong in tech and digital businesses.', '₹8-16 LPA (Entry Level)', '["Depends on undergrad"]'::jsonb, '[{"title": "User Empathy", "description": "Learn to conduct user interviews and identify pain points."}, {"title": "Market Research", "description": "Understand competitive analysis and market sizing."}, {"title": "Agile Basics", "description": "Learn Scrum, Kanban, and writing user stories."}, {"title": "Data Analytics", "description": "Master basic SQL and product metrics (AARRR funnel)."}, {"title": "Wireframing", "description": "Learn to convey ideas visually using Balsamiq or Whimsical."}, {"title": "Prioritization Frameworks", "description": "Learn RICE, MoSCoW, and Kano models."}, {"title": "Product Strategy", "description": "Build a product roadmap aligned with business goals."}]'::jsonb)
+on conflict (id) do update set
+  name = excluded.name,
+  domain = excluded.domain,
+  description = excluded.description,
+  education = excluded.education,
+  skills = excluded.skills,
+  work_style = excluded.work_style,
+  subjects = excluded.subjects,
+  paths = excluded.paths,
+  growth = excluded.growth,
+  salary_range = excluded.salary_range,
+  entrance = excluded.entrance,
+  roadmap_sequence = excluded.roadmap_sequence;
+
+insert into public.career_paths (id, name, domain, description, education, skills, work_style, subjects, paths, growth, salary_range, entrance, roadmap_sequence)
+values ('computer-science', 'Software Engineer', 'Technology', 'Design software, systems, and digital products that solve real problems.', '["B.E./B.Tech in CS or related", "Alternative: diploma + skills + portfolio"]'::jsonb, '["Logical reasoning", "Problem solving", "Programming", "Systems thinking"]'::jsonb, '["Building things", "Analyzing information", "Working independently"]'::jsonb, '["Mathematics", "Computer Science", "Science"]'::jsonb, '["Logic basics -> Programming -> DSA -> Projects -> Internships"]'::jsonb, 'Very strong across software, cloud, and digital products.', '₹4-12 LPA (Entry Level)', '["JEE Main", "MHT-CET"]'::jsonb, '[{"title": "Programming Fundamentals", "description": "Master variables, loops, and logic in Python or C++."}, {"title": "Data Structures", "description": "Learn Arrays, Linked Lists, Stacks, and Queues."}, {"title": "Algorithms", "description": "Understand Sorting, Searching, and Recursion."}, {"title": "Version Control", "description": "Master Git and GitHub for collaborative coding."}, {"title": "Web Development Basics", "description": "Learn HTML, CSS, and basic JavaScript."}, {"title": "Backend/Frontend Specialization", "description": "Choose a stack (e.g., React or Node.js) and build projects."}, {"title": "System Design Basics", "description": "Understand how large scale applications are structured."}]'::jsonb)
+on conflict (id) do update set
+  name = excluded.name,
+  domain = excluded.domain,
+  description = excluded.description,
+  education = excluded.education,
+  skills = excluded.skills,
+  work_style = excluded.work_style,
+  subjects = excluded.subjects,
+  paths = excluded.paths,
+  growth = excluded.growth,
+  salary_range = excluded.salary_range,
+  entrance = excluded.entrance,
+  roadmap_sequence = excluded.roadmap_sequence;
+
+insert into public.career_paths (id, name, domain, description, education, skills, work_style, subjects, paths, growth, salary_range, entrance, roadmap_sequence)
+values ('medicine', 'Medicine & Healthcare (Doctor)', 'Healthcare', 'Use scientific knowledge and clinical reasoning to improve health outcomes.', '["MBBS and other recognized healthcare degrees"]'::jsonb, '["Science", "Attention to detail", "Empathy", "Communication"]'::jsonb, '["Working with people", "Research", "Structured problem solving"]'::jsonb, '["Biology", "Chemistry", "Science"]'::jsonb, '["Science foundation -> NEET -> MBBS -> Clinical training -> Specialization"]'::jsonb, 'Ever-present demand, stable and rewarding.', '₹6-12 LPA (Post-MBBS, highly variable)', '["NEET-UG"]'::jsonb, '[{"title": "Pre-Med Sciences", "description": "Master Physics, Chemistry, and Biology fundamentals."}, {"title": "NEET Preparation", "description": "Intensive focus on entrance exam patterns and mock tests."}, {"title": "Anatomy & Physiology", "description": "First-year medical school core subjects."}, {"title": "Pathology & Pharmacology", "description": "Understand diseases and the drugs used to treat them."}, {"title": "Clinical Rotations", "description": "Gain hands-on experience in various hospital departments."}, {"title": "Internship Year", "description": "Complete mandatory rotational clinical internship."}, {"title": "PG Entrance Prep", "description": "Prepare for NEET-PG/NEXT for specialization."}]'::jsonb)
+on conflict (id) do update set
+  name = excluded.name,
+  domain = excluded.domain,
+  description = excluded.description,
+  education = excluded.education,
+  skills = excluded.skills,
+  work_style = excluded.work_style,
+  subjects = excluded.subjects,
+  paths = excluded.paths,
+  growth = excluded.growth,
+  salary_range = excluded.salary_range,
+  entrance = excluded.entrance,
+  roadmap_sequence = excluded.roadmap_sequence;

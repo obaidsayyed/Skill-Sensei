@@ -57,6 +57,18 @@ export interface Resource {
   free: boolean
 }
 
+export interface CareerRoadmap {
+  career_id: string
+  career: string
+  items: RoadmapItem[]
+}
+
+export interface CareerResources {
+  career_id: string
+  career: string
+  resources: Resource[]
+}
+
 export interface College {
   id: string
   name: string
@@ -70,7 +82,7 @@ export interface DashboardData {
   student: StudentProfile
   recommendations: Recommendation[]
   strengths: { name: string; score: number }[]
-  roadmap: RoadmapItem[]
+  roadmap: CareerRoadmap[]
   progress: { career_exploration: number; skills: number; roadmap: number; overall: number }
   resources: Resource[]
 }

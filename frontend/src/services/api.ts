@@ -6,6 +6,8 @@ import type {
   StudentProfile,
   Resource,
   College,
+  CareerRoadmap,
+  CareerResources,
 } from '../types'
 
 import type {
@@ -98,7 +100,7 @@ export const api = {
     request<Career>(`/careers/${careerId}`),
 
   roadmap: () =>
-    request<RoadmapItem[]>('/students/me/roadmap'),
+    request<CareerRoadmap[]>('/students/me/roadmap'),
 
   completeRoadmapItem: (itemId: string) =>
     request<RoadmapItem>(
@@ -109,7 +111,7 @@ export const api = {
     ),
 
   resources: () =>
-    request<Resource[]>('/resources'),
+    request<CareerResources[]>('/resources'),
 
   colleges: () =>
     request<College[]>('/colleges'),

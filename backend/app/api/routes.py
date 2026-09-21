@@ -23,7 +23,7 @@ from ..services.store import (
     get_assessment_attempt,
 )
 from ..services.career_engine import score_profile, score_streams_from_profile
-from ..services.roadmap_service import generate_roadmap
+from ..services.roadmap_service import generate_roadmaps
 from ..services.ai_service import personalize_with_gemini
 from ..data.questions import INTEREST_STREAMS
 from ..services.assessment_service import analyze_answers, serialize_question
@@ -63,10 +63,12 @@ def _dashboard_for_student(student: dict, user_id: str):
         recs = score_profile(student)
         RECOMMENDATIONS[student_id] = recs
     if student_id not in ROADMAPS:
-        ROADMAPS[student_id] = generate_roadmap(student, recs[0] if recs else None)
+        ROADMAPS[student_id] = generate_roadmaps(student, recs[:5])
 
-    rm = ROADMAPS[student_id]
-    completed=sum(x['completed'] for x in rm)
+    rm = ROADMAPS[student_id][:5]
+    total_items = sum(len(career_rm['items']) for career_rm in rm)
+    completed = sum(x['completed'] for career_rm in rm for x in career_rm['items'])
+    
     strengths=[]
     strength_names=['Logical reasoning','Communication','Creativity','Problem solving','Mathematics','Leadership','Research','Empathy','Attention to detail']
     chosen=set(student.get('strengths',[]))
@@ -76,7 +78,7 @@ def _dashboard_for_student(student: dict, user_id: str):
         strengths.append({'name':name,'score':base})
     skills=int(min(94,48+len(student.get('strengths',[]))*6+len(student.get('subjects',[]))*3))
     career_exploration=78 if len(recs)>=3 else 55
-    roadmap_progress=int(round(completed/len(rm)*100)) if rm else 0
+    roadmap_progress=int(round(completed/total_items*100)) if total_items > 0 else 0
     overall=int(round(career_exploration*.35+skills*.2+roadmap_progress*.45))
     progress={'career_exploration':career_exploration,'skills':skills,'roadmap':roadmap_progress,'overall':overall}
     PROGRESS[student_id] = progress
@@ -92,14 +94,12 @@ def dashboard(user_id: Annotated[str, Depends(require_user)]):
 async def analyze(user_id: Annotated[str, Depends(require_user)]):
     student=_get_owned_student(user_id)
     recs=score_profile(student)
-    roadmap=generate_roadmap(student,recs[0] if recs else None)
+    roadmap=generate_roadmaps(student, recs[:5])
     RECOMMENDATIONS[student['id']]=recs
     ROADMAPS[student['id']]=roadmap
     summary=await personalize_with_gemini(student,recs)
     _persist_derived(student['id'], user_id)
     return {'recommendations':recs,'ai_summary':summary}
-
-
 
 @router.get('/assessment/questions')
 def assessment_questions(user_id: Annotated[str, Depends(require_user)]):
@@ -193,22 +193,66 @@ def roadmap(user_id: Annotated[str, Depends(require_user)]):
     if student_id not in ROADMAPS:
         recs=RECOMMENDATIONS.get(student_id) or score_profile(student)
         RECOMMENDATIONS[student_id]=recs
-        ROADMAPS[student_id]=generate_roadmap(student,recs[0] if recs else None)
+        ROADMAPS[student_id]=generate_roadmaps(student, recs[:5])
         _persist_derived(student_id, user_id)
-    return ROADMAPS[student_id]
+    return ROADMAPS[student_id][:5]
 
 @router.post('/students/me/roadmap/{item_id}/complete')
 def complete(item_id:str, user_id: Annotated[str, Depends(require_user)]):
     student=_get_owned_student(user_id)
-    items=ROADMAPS.get(student['id'],[])
-    item=next((x for x in items if x['id']==item_id),None)
+    career_roadmaps=ROADMAPS.get(student['id'],[])
+    
+    item = None
+    for career_rm in career_roadmaps:
+        for rm_item in career_rm['items']:
+            if rm_item['id'] == item_id:
+                item = rm_item
+                break
+        if item:
+            break
+            
     if not item: raise HTTPException(404,'Roadmap item not found')
     item['completed']=True
     _persist_derived(student['id'], user_id)
     return item
 
+RESOURCE_MAPPING = {
+    "computer-science": ["Programming", "Computer Science", "Data & AI"],
+    "data-science": ["Mathematics", "Data & AI", "Programming", "Computer Science"],
+    "product-management": ["Business", "Programming", "Design"],
+    "finance": ["Mathematics", "Business"],
+    "ux-design": ["Design", "Computer Science"],
+    "law": ["Business"],
+    "medicine": ["Mathematics", "Science"],
+    "psychology": ["Business"]
+}
+
 @router.get('/resources')
-def resources(user_id: Annotated[str, Depends(require_user)]): return list_resources()
+def resources(user_id: Annotated[str, Depends(require_user)]):
+    student = _get_owned_student(user_id)
+    recs = RECOMMENDATIONS.get(student['id'], [])
+    if not recs:
+        recs = score_profile(student)
+        RECOMMENDATIONS[student['id']] = recs
+        
+    all_resources = list_resources()
+    segmented_resources = []
+    
+    for rec in recs[:5]:
+        career_id = rec.get('career_id')
+        career = rec.get('career')
+        categories = RESOURCE_MAPPING.get(career_id, [])
+        career_resources = [r for r in all_resources if r['category'] in categories]
+        if not career_resources:
+            career_resources = all_resources[:2] # Fallback if no specific match
+        
+        segmented_resources.append({
+            "career_id": career_id,
+            "career": career,
+            "resources": career_resources
+        })
+        
+    return segmented_resources
 
 @router.get('/colleges')
 def colleges(user_id: Annotated[str, Depends(require_user)]): return list_colleges()

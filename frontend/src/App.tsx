@@ -14,6 +14,7 @@ import Roadmap from './pages/Roadmap'
 import Resources from './pages/Resources'
 import Progress from './pages/Progress'
 import CollegeExplorer from './pages/CollegeExplorer'
+import NotFound from './pages/NotFound'
 
 const nav = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -153,9 +154,9 @@ export default function App() {
           <Route path="/resources" element={<Resources />} />
           <Route path="/progress" element={<Progress student={student} />} />
           <Route path="/colleges" element={<CollegeExplorer />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
-      </AppShell>} /> : <Route path="*" element={signedIn ? <Navigate to="/onboarding" replace /> : <Landing />} />}
+      </AppShell>} /> : <Route path="*" element={signedIn ? <Navigate to="/onboarding" replace /> : <NotFound />} />}
     </Routes>
   )
 }
