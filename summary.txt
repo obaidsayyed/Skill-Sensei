@@ -1,0 +1,29 @@
+SkillSensei Application Summary
+
+SkillSensei is a full-stack web application designed to help students and users assess their skills and align them with their interests. The application evaluates user inputs and assessment answers to provide personalized stream directions and insights.
+
+## Architecture & Tech Stack
+
+1. **Frontend (React + Vite + TypeScript):**
+   - Built with modern React and Vite for fast development and optimized builds.
+   - Uses React Router for navigation and Recharts for data visualization.
+   - UI styling and layout are handled within the React ecosystem.
+   - Communicates with the FastAPI backend via REST API.
+   - Handles user sessions and authentication state natively with the Supabase JS client.
+
+2. **Backend (FastAPI + Python):**
+   - Provides a fast, asynchronous RESTful API using FastAPI.
+   - Manages the logic for processing assessments, scoring, and generating results.
+   - Verifies Supabase Auth bearer tokens to securely manage user identity and ownership.
+   - Optionally integrates with the Gemini API to provide AI-powered summaries (falling back to deterministic summaries if Gemini is not used).
+
+3. **Database & Authentication (Supabase):**
+   - **Auth:** Uses Supabase Authentication to manage user sign-ups, logins, and sessions (including optional Google Sign-in).
+   - **Database:** Stores user profiles, assessment questions, and results. A provided SQL schema sets up the required tables for storing a 150-question bank (15 questions per onboarding interest) and user data.
+
+## Core Features
+
+- **User Onboarding:** Users sign up and state their initial interests.
+- **Skill Assessment:** A 15-question assessment is presented to the user based on their stated interests. The questions are pulled from the predefined bank in the Supabase database.
+- **Scoring & Alignment:** The backend compares the user's answers against their stated interests. The results categorize the alignment as "strong alignment", "partial alignment", or a "broadened view".
+- **Insightful Feedback:** Users receive actionable feedback and stream directions explicitly tagged in the UI, helping them make informed decisions about their skill development paths.

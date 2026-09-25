@@ -19,7 +19,7 @@ export default function CareerPathTabs({
           onClick={() => onSelect(rec.career_id)}
         >
           <span>{rec.career}</span>
-          <b>{rec.match_score}%</b>
+          <b style={{ fontSize: '0.8em', opacity: 0.8 }}>{rec.alignment_label}</b>
         </InteractiveHoverButton>
       ))}
     </div>

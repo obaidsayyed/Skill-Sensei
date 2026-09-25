@@ -38,7 +38,7 @@ def require_user(
         with httpx.Client(timeout=15.0) as client:
             response = client.get(url, headers=headers)
     except httpx.HTTPError as exc:
-        raise HTTPException(status_code=503, detail="Supabase Auth could not be reached.") from exc
+        raise HTTPException(status_code=503, detail="Login Service Failed, Please Check Your Internet and Try Again!!!") from exc
 
     if response.status_code != 200:
         raise HTTPException(

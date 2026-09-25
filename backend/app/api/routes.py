@@ -22,7 +22,7 @@ from ..services.store import (
     save_assessment_attempt,
     get_assessment_attempt,
 )
-from ..services.career_engine import score_profile, score_streams_from_profile
+from ..services.career_engine import score_profile, score_streams_from_profile, explore_subjects_for_stream
 from ..services.roadmap_service import generate_roadmaps
 from ..services.ai_service import personalize_with_gemini
 from ..data.questions import INTEREST_STREAMS
@@ -104,31 +104,35 @@ async def analyze(user_id: Annotated[str, Depends(require_user)]):
 @router.get('/assessment/questions')
 def assessment_questions(user_id: Annotated[str, Depends(require_user)]):
     student = _get_owned_student(user_id)
-    pool = list_assessment_questions()
+    interests = list(set(student.get('interests', [])))
+    
+    # We expect up to 3 interests. The user wants exactly 5 questions per interest.
+    pool = list_assessment_questions(interests)
+    
     if not pool:
-        raise HTTPException(503, 'Assessment question bank is unavailable.')
-    interests = set(student.get('interests', []))
-    selected = [q for q in pool if q.get('interest') in interests]
-    if len(selected) < 15:
-        selected = pool
-    # Ensure a mixed set while still emphasizing the student's selected interests.
+        # Fallback if DB is unavailable
+        pool = list_assessment_questions()
+        
     grouped = {}
-    for q in selected:
-        grouped.setdefault(q.get('interest', 'General'), []).append(q)
+    for q in pool:
+        # Supabase returned domain, but old structure used interest. We handle both.
+        domain = q.get('domain') or q.get('interest', 'General')
+        grouped.setdefault(domain, []).append(q)
+        
     questions = []
-    groups = list(grouped.values())
-    for group in groups:
+    for interest in interests:
+        group = grouped.get(interest, [])
         random.shuffle(group)
-    # Give each selected interest a chance to appear, then fill randomly.
-    selected_interest_groups = [grouped[i] for i in interests if i in grouped]
-    for group in selected_interest_groups:
-        if group and len(questions) < 15:
-            questions.append(group.pop())
-    remainder = [q for group in grouped.values() for q in group]
-    random.shuffle(remainder)
-    questions.extend(remainder[:15-len(questions)])
+        # Select exactly 5 per domain
+        questions.extend(group[:5])
+        
+    # If we somehow don't have 15 (e.g. fewer domains or fewer questions in DB), fill remainder
+    if len(questions) < 15:
+        remainder = [q for group in grouped.values() for q in group if q not in questions]
+        random.shuffle(remainder)
+        questions.extend(remainder[:15-len(questions)])
+        
     random.shuffle(questions)
-    questions = questions[:15]
     return {
         'attempt_id': str(uuid4()),
         'total_questions': len(questions),
@@ -141,6 +145,13 @@ def assessment_status(user_id: Annotated[str, Depends(require_user)]):
     attempt = get_assessment_attempt(user_id)
     if not attempt:
         return {'completed': False}
+    
+    student = _get_owned_student(user_id)
+    for suggestion in attempt.get('stream_suggestions', []):
+        if 'explore_subjects' not in suggestion:
+            focus = suggestion.get('focus_subjects', [])
+            suggestion['explore_subjects'] = explore_subjects_for_stream(student, suggestion['stream_id'], focus)
+
     return {'completed': True, **{k: attempt.get(k) for k in ['status', 'alignment_score', 'message', 'stream_suggestions', 'answered_questions', 'total_questions']}}
 
 
@@ -161,7 +172,7 @@ def assessment_submit(payload: AssessmentSubmitRequest, user_id: Annotated[str, 
         for stream, weight in INTEREST_STREAMS[interest].items():
             interest_stream_scores[stream] += weight
     interest_suggestions = score_streams_from_profile(student)
-    result = analyze_answers(question_ids, answers, student.get('interests', []), interest_stream_scores, interest_suggestions, profile=student)
+    result = analyze_answers(question_ids, answers, student.get('interests', []), interest_stream_scores, interest_suggestions, questions, profile=student)
     attempt = {
         'id': str(uuid4()),
         'user_id': user_id,

@@ -4,6 +4,17 @@ from uuid import uuid4
 
 import httpx
 
+_client = None
+
+def _get_client() -> httpx.Client:
+    global _client
+    if _client is None:
+        _client = httpx.Client(
+            timeout=httpx.Timeout(connect=10.0, read=30.0, write=30.0, pool=10.0),
+            limits=httpx.Limits(max_keepalive_connections=20, max_connections=100)
+        )
+    return _client
+
 from ..core.config import settings
 from ..data.careers import CAREERS
 from ..data.resources import RESOURCES
@@ -58,8 +69,7 @@ def _load_row_by_user(user_id: str) -> dict | None:
     if not _supabase_enabled():
         return None
     url = f"{_supabase_endpoint()}?select=*&user_id=eq.{quote(user_id, safe='')}"
-    with httpx.Client(timeout=10) as client:
-        response = client.get(url, headers=_supabase_headers())
+    response = _get_client().get(url, headers=_supabase_headers())
     response.raise_for_status()
     rows = response.json()
     return rows[0] if rows else None
@@ -75,19 +85,11 @@ def _save_row(row: dict) -> dict:
         "Prefer": "resolution=merge-duplicates,return=representation",
     }
 
-    timeout = httpx.Timeout(
-        connect=10.0,
-        read=30.0,
-        write=30.0,
-        pool=10.0,
+    response = _get_client().post(
+        url,
+        headers=headers,
+        json=row,
     )
-
-    with httpx.Client(timeout=timeout) as client:
-        response = client.post(
-            url,
-            headers=headers,
-            json=row,
-        )
 
     response.raise_for_status()
     rows = response.json()
@@ -166,16 +168,22 @@ def _assessment_attempts_endpoint() -> str:
     return _supabase_endpoint("assessment_attempts")
 
 
-def list_assessment_questions() -> list[dict]:
-    if _supabase_enabled():
-        url = f"{_assessment_questions_endpoint()}?select=id,interest,dimension,question,options&active=eq.true"
-        with httpx.Client(timeout=10) as client:
-            response = client.get(url, headers=_supabase_headers())
-        response.raise_for_status()
-        rows = response.json()
-        if rows:
-            return rows
-    return deepcopy(QUESTIONS)
+def list_assessment_questions(domains: list[str] | None = None) -> list[dict]:
+    if not _supabase_enabled():
+        return []
+    url = f"{_supabase_endpoint('questions')}?select=*"
+    if domains:
+        encoded_domains = quote(",".join(f'"{d.upper()}"' for d in domains), safe='",')
+        url += f"&domain=in.({encoded_domains})"
+    response = _get_client().get(url, headers=_supabase_headers())
+    response.raise_for_status()
+    rows = response.json()
+    if rows:
+        for row in rows:
+            if "domain" in row:
+                row["domain"] = row["domain"].title()
+        return rows
+    return []
 
 
 def save_assessment_attempt(attempt: dict) -> dict:
@@ -184,8 +192,7 @@ def save_assessment_attempt(attempt: dict) -> dict:
         return deepcopy(attempt)
     url = f"{_assessment_attempts_endpoint()}?on_conflict=user_id"
     headers = {**_supabase_headers(), "Prefer": "resolution=merge-duplicates,return=representation"}
-    with httpx.Client(timeout=10) as client:
-        response = client.post(url, headers=headers, json=attempt)
+    response = _get_client().post(url, headers=headers, json=attempt)
     response.raise_for_status()
     rows = response.json()
     return rows[0] if rows else deepcopy(attempt)
@@ -194,8 +201,7 @@ def save_assessment_attempt(attempt: dict) -> dict:
 def get_assessment_attempt(user_id: str) -> dict | None:
     if _supabase_enabled():
         url = f"{_assessment_attempts_endpoint()}?select=*&user_id=eq.{quote(user_id, safe='')}"
-        with httpx.Client(timeout=10) as client:
-            response = client.get(url, headers=_supabase_headers())
+        response = _get_client().get(url, headers=_supabase_headers())
         response.raise_for_status()
         rows = response.json()
         if rows:
@@ -204,30 +210,64 @@ def get_assessment_attempt(user_id: str) -> dict | None:
 
 
 def get_questions_by_ids(question_ids: list[str]) -> list[dict]:
-    indexed = {q["id"]: q for q in list_assessment_questions()}
-    return [deepcopy(indexed[qid]) for qid in question_ids if qid in indexed]
+    if not _supabase_enabled():
+        return []
+    url = f"{_supabase_endpoint('questions')}?select=*"
+    encoded_ids = quote(",".join(f'"{i}"' for i in question_ids), safe='",')
+    url += f"&id=in.({encoded_ids})"
+    response = _get_client().get(url, headers=_supabase_headers())
+    if response.status_code == 200:
+        return response.json()
+    return []
 
 
 def list_careers():
-    if _supabase_enabled():
-        url = f"{_supabase_endpoint('career_paths')}?select=*"
-        with httpx.Client(timeout=10) as client:
-            response = client.get(url, headers=_supabase_headers())
-        if response.status_code == 200:
-            rows = response.json()
-            if rows:
-                return rows
-    return deepcopy(CAREERS)
+    if not _supabase_enabled():
+        return []
+    url = f"{_supabase_endpoint('career_paths')}?select=*"
+    response = _get_client().get(url, headers=_supabase_headers())
+    if response.status_code == 200:
+        return response.json()
+    return []
 
 def get_career(career_id: str):
-    if _supabase_enabled():
-        url = f"{_supabase_endpoint('career_paths')}?select=*&id=eq.{quote(career_id, safe='')}"
-        with httpx.Client(timeout=10) as client:
-            response = client.get(url, headers=_supabase_headers())
-        if response.status_code == 200:
-            rows = response.json()
-            if rows:
-                return rows[0]
-    return deepcopy(next((c for c in CAREERS if c["id"] == career_id), None))
+    if not _supabase_enabled():
+        return None
+    url = f"{_supabase_endpoint('career_paths')}?select=*&id=eq.{quote(career_id, safe='')}"
+    response = _get_client().get(url, headers=_supabase_headers())
+    if response.status_code == 200:
+        rows = response.json()
+        if rows:
+            return rows[0]
+    return None
+
+def match_career_embeddings(query_embedding: list[float], match_count: int = 70) -> list[dict]:
+    if not _supabase_enabled():
+        return []
+    url = f"{settings.supabase_url.rstrip('/')}/rest/v1/rpc/match_careers"
+    payload = {
+        "query_embedding": query_embedding,
+        "match_count": match_count
+    }
+    response = _get_client().post(url, headers=_supabase_headers(), json=payload)
+    if response.status_code == 200:
+        return response.json()
+    return []
+
+def match_stream_embeddings(query_embedding: list[float], match_count: int = 3) -> list[dict]:
+    if not _supabase_enabled():
+        return []
+    url = f"{settings.supabase_url.rstrip('/')}/rest/v1/rpc/match_streams"
+    payload = {
+        "query_embedding": query_embedding,
+        "match_count": match_count
+    }
+    response = _get_client().post(url, headers=_supabase_headers(), json=payload)
+    if response.status_code == 200:
+        return response.json()
+    return []
+
 def list_resources(): return deepcopy(RESOURCES)
 def list_colleges(): return deepcopy(COLLEGES)
+
+

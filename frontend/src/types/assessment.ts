@@ -21,9 +21,11 @@ export interface StreamSuggestion {
   stream_id: string
   stream: string
   match_score?: number
+  alignment_label?: string
   source: 'assessment' | 'interest'
   tag?: string | null
   focus_subjects?: string[]
+  explore_subjects?: string[]
   recommendation_id?: string
 }
 

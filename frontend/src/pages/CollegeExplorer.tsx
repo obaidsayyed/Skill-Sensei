@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react'
+import { Swords } from 'lucide-react'
 
 export default function CollegeExplorer() {
   return (
@@ -33,7 +33,7 @@ export default function CollegeExplorer() {
           justifyContent: 'center',
           color: 'var(--primary-color)'
         }}>
-          <Sparkles size={24} />
+          <Swords size={24} />
         </div>
         
         <div>

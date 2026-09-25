@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, Circle, Clock3, Sparkles } from 'lucide-react'
+import { Check, Circle, Clock3, Swords } from 'lucide-react'
 import { api } from '../services/api'
 import type { CareerRoadmap, RoadmapItem, StudentProfile } from '../types'
 import SectionHeader from '../components/SectionHeader'
@@ -62,7 +62,7 @@ export default function Roadmap({student}:{student:StudentProfile}) {
       </div>
 
       <div className="roadmap-header">
-        <div><Sparkles size={17}/><span>Built around your current profile</span></div>
+        <div><Swords size={17}/><span>Built around your current profile</span></div>
         <strong>{items.filter(x=>x.completed).length} / {items.length} complete</strong>
       </div>
       

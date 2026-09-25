@@ -1,0 +1,50 @@
+SkillSensei Careers & Subjects
+
+Below is the comprehensive list of the career fields, specific career roles, and subjects that the application evaluates when scoring and generating recommendations.
+
+## Domains (Broad Career Fields)
+These represent the broad industry categories that users can explore:
+- Business
+- Design
+- Finance
+- Healthcare
+- Law
+- Media
+- Science
+- Technology
+
+## Career Options
+The backend evaluates user profiles against these specific career paths:
+- Blockchain Developer
+- Clinical Psychologist
+- Content Creator / Influencer
+- Corporate Lawyer
+- Data Analyst
+- Digital Marketer
+- Ethical Hacker
+- Investment Banker
+- Machine Learning Engineer
+- Marine Biologist
+- Medicine & Healthcare (Doctor)
+- Product Management
+- Prompt Engineer
+- Software Engineer
+- UI/UX Designer
+- Video Game Designer
+
+## Subjects
+These are the academic subjects considered during profile matching and stream recommendations:
+- Accountancy
+- Art/Design
+- Biology
+- Business Studies
+- Chemistry
+- Computer Science
+- Economics
+- English
+- Mathematics
+- Media Studies
+- Political Science
+- Psychology
+- Science
+- Social Science

@@ -19,8 +19,8 @@ INTEREST_STREAMS = {
     "Law": {"science": 0.10, "commerce": 0.18, "arts": 0.72},
     "Healthcare": {"science": 0.88, "commerce": 0.05, "arts": 0.07},
     "Media": {"science": 0.05, "commerce": 0.12, "arts": 0.83},
-    "Psychology": {"science": 0.14, "commerce": 0.16, "arts": 0.70},
-    "Entrepreneurship": {"science": 0.12, "commerce": 0.78, "arts": 0.10},
+    "Education": {"science": 0.10, "commerce": 0.15, "arts": 0.75},
+    "Social Sciences": {"science": 0.15, "commerce": 0.10, "arts": 0.75},
 }
 
 ARCHETYPES = [

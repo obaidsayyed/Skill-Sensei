@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, UserRound, Compass, Map, BookOpen, TrendingUp, Building2, LogOut, Sparkles, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { LayoutDashboard, UserRound, Target, Scroll, BookOpen, Flame, MapPin, LogOut, Swords, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { api, configureAuth } from './services/api'
 import { supabase } from './lib/supabase'
 import type { StudentProfile } from './types'
@@ -19,11 +19,11 @@ import NotFound from './pages/NotFound'
 const nav = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/profile', label: 'My Profile', icon: UserRound },
-  { to: '/careers', label: 'Career Explorer', icon: Compass },
-  { to: '/roadmap', label: 'My Roadmap', icon: Map },
+  { to: '/careers', label: 'Career Explorer', icon: Target },
+  { to: '/roadmap', label: 'My Roadmap', icon: Scroll },
   { to: '/resources', label: 'Learning Resources', icon: BookOpen },
-  { to: '/progress', label: 'Progress', icon: TrendingUp },
-  { to: '/colleges', label: 'College Explorer', icon: Building2 },
+  { to: '/progress', label: 'Progress', icon: Flame },
+  { to: '/colleges', label: 'College Explorer', icon: MapPin },
 ]
 
 function AppShell({ children, student, onLogout, email }: { children: ReactNode; student: StudentProfile; onLogout: () => Promise<void>; email: string }) {
@@ -35,7 +35,7 @@ function AppShell({ children, student, onLogout, email }: { children: ReactNode;
     <div className="app-shell">
       <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
         <div className="brand">
-          <div className="brand-mark"><Sparkles size={18} /></div>
+          <div className="brand-mark"><Swords size={18} /></div>
           {!collapsed && <div><strong>SkillSensei</strong><span>Career navigation</span></div>}
         </div>
         <button className="collapse-btn" onClick={() => setCollapsed(v => !v)} aria-label="Toggle sidebar">
@@ -50,7 +50,7 @@ function AppShell({ children, student, onLogout, email }: { children: ReactNode;
         </nav>
         <div className="sidebar-bottom">
           <div className="student-mini">
-            <div className="avatar">{student.name.charAt(0).toUpperCase()}</div>
+            <div className="avatar sensei-avatar"></div>
             {!collapsed && <div><strong>{student.name}</strong><span title={email}>Class {student.class_level}</span></div>}
           </div>
           <button className="nav-item ghost" onClick={onLogout}><LogOut size={18} />{!collapsed && <span>Log out</span>}</button>
@@ -59,9 +59,9 @@ function AppShell({ children, student, onLogout, email }: { children: ReactNode;
       <main className="main-area">
         <header className="topbar">
           <div className="topbar-title">{nav.find(n => location.pathname.startsWith(n.to))?.label || 'SkillSensei'}</div>
-          <div className="topbar-right"><span className="board-pill">{student.board}</span><span className="location-pill">{student.city || 'India'}</span><div className="avatar" title={email}>{student.name.charAt(0).toUpperCase()}</div></div>
+          <div className="topbar-right"><span className="board-pill">{student.board}</span><span className="location-pill">{student.city || 'India'}</span><div className="avatar sensei-avatar" title={email}></div></div>
         </header>
-        <div className="page-content">{children}</div>
+        <div className="page-content slash-enter">{children}</div>
       </main>
     </div>
   )
@@ -138,7 +138,7 @@ export default function App() {
     navigate('/', { replace: true })
   }
 
-  if (!sessionReady || loading) return <div className="loading-screen"><div className="loading-orb"><Sparkles /></div><div>Loading your SkillSensei workspace…</div></div>
+  if (!sessionReady || loading) return <div className="loading-screen"><div className="loading-orb"><Swords size={24} /></div><div>Loading your Dojo…</div></div>
 
   return (
     <Routes>

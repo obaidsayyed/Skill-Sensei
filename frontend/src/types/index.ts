@@ -17,6 +17,7 @@ export interface Recommendation {
   career: string
   domain: string
   match_score: number
+  alignment_label: string
   confidence: 'High' | 'Medium' | 'Low'
   why_match: string[]
   skill_gaps: string[]

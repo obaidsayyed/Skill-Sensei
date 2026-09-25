@@ -1,0 +1,45 @@
+SkillSensei Scoring Metrics
+
+The backend relies on two main scoring engines to evaluate user profiles and assessment answers: the Career Engine and the Assessment Service.
+
+## 1. Career Engine Scoring (`career_engine.py`)
+This engine matches a user's stated profile (subjects, interests, strengths, work styles) against a predefined list of careers.
+
+### Points System for Careers
+Each career starts with a base score of 3 points. Additional points are added based on profile matches:
+
+- **Subjects**:
+  - Exact match: +15 points
+  - Partial match: +8 points
+- **Interests**:
+  - Matches career domain: +18 points
+  - Matches career description or name: +12 points
+- **Strengths (Skills)**:
+  - Exact match with career skills: +12 points
+  - Partial match: +6 points
+- **Work Styles**:
+  - Exact match: +10 points
+  - Partial match: +5 points
+
+### Final Career Match Score
+The raw points are normalized relative to the highest-scoring career using the formula:
+`Percentage = 58 + (raw_score / max_score) * 40`
+The final percentage is then clamped between **55% and 98%**.
+
+### Stream Mapping
+Careers are grouped by domain to calculate Stream Scores (Science, Commerce, Arts/Humanities). The scores of the matched careers within a stream are aggregated and averaged to generate the baseline stream score.
+
+## 2. Assessment Service Scoring (`assessment_service.py`)
+This engine evaluates the user's answers to the 15-question assessment and measures their alignment with the interests stated during onboarding.
+
+### Option Weighting
+Each answer option carries specific point values mapped to one or more streams (e.g., Science: +2, Commerce: +1). The engine aggregates these points to form an `answer_score` profile.
+
+### Cosine Similarity & Alignment
+The engine normalizes both the `answer_score` and the `interest_stream_scores` (from the Career Engine), then computes the Cosine Similarity between them to determine how closely the user's test answers align with their stated interests.
+
+### Alignment Classification
+The cosine similarity value dictates the match status:
+- **Strong Match**: Cosine Similarity >= 0.78
+- **Partial Match**: Cosine Similarity >= 0.57
+- **Broadened View (Not Fully Match)**: Cosine Similarity < 0.57
