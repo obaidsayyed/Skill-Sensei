@@ -13,7 +13,7 @@ CREATE TABLE career_paths (
     salary_range text NOT NULL,
     entrance jsonb NOT NULL,
     roadmap_sequence jsonb NOT NULL
-);
+); 
 CREATE INDEX idx_career_paths_domain ON career_paths(domain);
 
 INSERT INTO career_paths (id, name, domain, skills, subjects, work_style, description, education, paths, growth, salary_range, entrance, roadmap_sequence)
